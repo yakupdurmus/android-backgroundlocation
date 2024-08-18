@@ -2,6 +2,9 @@ package com.example.myapplication4;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.ActivityManager;
+import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.Button;
@@ -104,12 +107,23 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void startLocationWork() {
-        OneTimeWorkRequest foregroundWorkRequest = new OneTimeWorkRequest.Builder(LocationWork.class)
-                .addTag("LocationWork")
-                .setBackoffCriteria(BackoffPolicy.LINEAR, OneTimeWorkRequest.MIN_BACKOFF_MILLIS, TimeUnit.SECONDS)
-                .build();
+        Intent serviceIntent = new Intent(this, ForegroundService.class);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !foregroundServiceRunning()) {
+            startForegroundService(serviceIntent);
+        }else {
+            Log.e("Main activity error","-");
+        }
+    }
 
-        WorkManager.getInstance(MainActivity.this).enqueue(foregroundWorkRequest);
+        public  boolean foregroundServiceRunning(){
+        ActivityManager activityManager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+        for(ActivityManager.RunningServiceInfo service:activityManager.getRunningServices(Integer.MAX_VALUE)){
+            if(ForegroundService.class.getName().equals(service.service.getClassName())){
+                return  true;
+            }
+        }
+
+        return false;
     }
 
 
