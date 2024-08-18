@@ -1,7 +1,6 @@
 package com.example.myapplication4;
 
 import android.Manifest;
-import android.app.Activity;
 import android.app.ActivityManager;
 import android.content.Context;
 import android.content.Intent;
@@ -9,26 +8,10 @@ import android.os.Bundle;
 import android.util.Log;
 import android.widget.Button;
 import android.widget.Toast;
-
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.work.BackoffPolicy;
-import androidx.work.OneTimeWorkRequest;
-import androidx.work.WorkManager;
-
-import java.util.concurrent.TimeUnit;
-
-
-import android.content.pm.PackageManager;
 import android.os.Build;
-
-import android.view.View;
-
-
 import androidx.activity.EdgeToEdge;
-
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -36,7 +19,6 @@ import androidx.core.view.WindowInsetsCompat;
 
 public class MainActivity extends AppCompatActivity {
 
-    public Activity activity;
     Button requestPermissionButton, backgroundLocationButton;
     private final String[] foregroundLocationPermission =
             {
@@ -49,7 +31,6 @@ public class MainActivity extends AppCompatActivity {
             };
 
     private PermissionManager permissionManager;
-    private LocationManager locationManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -62,26 +43,29 @@ public class MainActivity extends AppCompatActivity {
             return insets;
         });
 
+        //Location buttons
         backgroundLocationButton = findViewById(R.id.getBackgrounLocationButton);
         requestPermissionButton = findViewById(R.id.locationRequestButton);
 
         permissionManager = PermissionManager.getInstance(this);
-        locationManager = LocationManager.getInstance(this);
 
+        //First should be access location permission for foreground
         requestPermissionButton.setOnClickListener(v -> {
             if (!permissionManager.checkPermissions(foregroundLocationPermission)) {
                 permissionManager.askPermissions(MainActivity.this, foregroundLocationPermission, 100);
             }
         });
 
+        //Second should be access location permission fore background (allow always)
         backgroundLocationButton.setOnClickListener(v -> {
             if (!permissionManager.checkPermissions(backgroundLocationPermission)) {
                 permissionManager.askPermissions(MainActivity.this, backgroundLocationPermission, 200);
             } else {
-                if (locationManager.isLocationEnabled()) {
+                if (permissionManager.isLocationEnabled()) {
+                    Log.e("TAG","background location permission enabled");
                     startLocationWork();
                 } else {
-                    locationManager.createLocationRequest();
+                    permissionManager.createLocationRequest();
                     Toast.makeText(MainActivity.this, "Location service not enabled", Toast.LENGTH_SHORT).show();
                 }
             }
@@ -93,12 +77,12 @@ public class MainActivity extends AppCompatActivity {
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (permissionManager.handlePermissionResult(MainActivity.this, 100, permissions, grantResults)) {
-            Log.e("TAG", "1");
 
-            if (locationManager.isLocationEnabled()) {
+            if (permissionManager.isLocationEnabled()) {
+                Log.e("TAG","onRequestPermissionResult isLocationEnabled true");
                 startLocationWork();
             } else {
-                Log.e("TAG","onRequestPermissionsResult else");
+                Log.e("TAG","onRequestPermissionResult isLocationEnabled false");
                 //locationManager.createLocationResult();
                 Toast.makeText(MainActivity.this, "Location service is not enabled", Toast.LENGTH_SHORT)
                         .show();
@@ -111,7 +95,7 @@ public class MainActivity extends AppCompatActivity {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !foregroundServiceRunning()) {
             startForegroundService(serviceIntent);
         }else {
-            Log.e("Main activity error","-");
+            Log.e("TAG","Main activity error");
         }
     }
 
@@ -125,6 +109,5 @@ public class MainActivity extends AppCompatActivity {
 
         return false;
     }
-
 
 }

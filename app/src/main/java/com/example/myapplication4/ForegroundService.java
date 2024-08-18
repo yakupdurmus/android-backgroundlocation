@@ -9,7 +9,6 @@ import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Build;
 import android.os.IBinder;
-import android.os.Looper;
 import android.util.Log;
 
 import androidx.annotation.Nullable;
@@ -45,7 +44,7 @@ public class ForegroundService extends Service {
         createNotificationChannel();
         startForeground(NOTIFICATION_ID, buildNotification());
 
-        Log.e("onStartCommand", "running");
+        Log.e("TAG", "onStartCommand worked");
 
         requestLocationUpdates();
 
@@ -77,10 +76,10 @@ public class ForegroundService extends Service {
             @Override
             public void onLocationResult(LocationResult locationResult) {
                 if (locationResult == null) {
+                    Log.e("TAG", "Location result null");
                     return;
                 }
                 for (Location location : locationResult.getLocations()) {
-                    // Log the location
                     Log.e("Location Update", "Lat: " + location.getLatitude() + "," + location.getLongitude());
                 }
             }
