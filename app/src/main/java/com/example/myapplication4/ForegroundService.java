@@ -7,6 +7,7 @@ import android.app.Service;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
+import android.net.http.NetworkException;
 import android.os.Build;
 import android.os.IBinder;
 import android.util.Log;
@@ -21,6 +22,13 @@ import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.Priority;
+
+import okhttp3.MediaType;
+import okhttp3.MultipartBody;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
 
 public class ForegroundService extends Service {
 
@@ -100,6 +108,7 @@ public class ForegroundService extends Service {
         fusedLocationClient.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, null)
                 .addOnSuccessListener(location -> {
                     if (location != null) {
+                        sendLocationData(location);
                         Log.e("Location Update", "Lat: " + location.getLatitude() + "," + location.getLongitude());
                     }
                 });
@@ -118,7 +127,7 @@ public class ForegroundService extends Service {
     }
 
     private Notification buildNotification() {
-        Log.e("TAG","notification builder");
+        Log.e("TAG", "notification builder");
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle("Location Service")
                 .setContentText("Tracking your location")
@@ -152,6 +161,43 @@ public class ForegroundService extends Service {
         restartServiceIntent.setPackage(getPackageName());
         startService(restartServiceIntent);
         super.onTaskRemoved(rootIntent);
+    }
+
+    private void sendLocationData(Location location) {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                OkHttpClient client = new OkHttpClient().newBuilder()
+                        .build();
+                MediaType mediaType = MediaType.parse("text/plain");
+
+                RequestBody body = new MultipartBody.Builder().setType(MultipartBody.FORM)
+                        .addFormDataPart("name", "yakup")
+                        .addFormDataPart("email", "yakuppdurmus@justlife.com")
+                        .addFormDataPart("message", "Lat:" + location.getLatitude() + " Long" + location.getLongitude())
+                        .build();
+
+                Request request = new Request.Builder()
+                        .url("https://www.yakupdurmus.com/YOUR_WEB_SERVICE.php")
+                        .method("POST", body)
+                        .build();
+
+                try {
+
+                    Response response = client.newCall(request).execute();
+                    if (response.isSuccessful()) {
+
+                        Log.d("Response", "Success: " + response.body().string());
+                    } else {
+
+                        Log.e("Error", "Request failed: " + response.code());
+                    }
+                } catch (Exception e) {
+
+                    Log.e("Error", "Request error: " + e.toString() + " " + e.getMessage());
+                }
+            }
+        }).start();
     }
 
 
