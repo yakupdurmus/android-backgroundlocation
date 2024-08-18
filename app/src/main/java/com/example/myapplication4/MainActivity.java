@@ -19,7 +19,7 @@ import androidx.core.view.WindowInsetsCompat;
 
 public class MainActivity extends AppCompatActivity {
 
-    Button requestPermissionButton, backgroundLocationButton;
+    Button requestPermissionButton, backgroundLocationButton, getRequestPermissionButton;
     private final String[] foregroundLocationPermission =
             {
                     Manifest.permission.ACCESS_FINE_LOCATION,
@@ -29,6 +29,10 @@ public class MainActivity extends AppCompatActivity {
             {
                     Manifest.permission.ACCESS_BACKGROUND_LOCATION
             };
+
+    private final String[] notificationPermission = {
+            Manifest.permission.POST_NOTIFICATIONS
+    };
 
     private PermissionManager permissionManager;
 
@@ -47,6 +51,9 @@ public class MainActivity extends AppCompatActivity {
         backgroundLocationButton = findViewById(R.id.getBackgrounLocationButton);
         requestPermissionButton = findViewById(R.id.locationRequestButton);
 
+        //Notification permission request
+        getRequestPermissionButton = findViewById(R.id.getNotificationPermissionButton);
+
         permissionManager = PermissionManager.getInstance(this);
 
         //First should be access location permission for foreground
@@ -62,12 +69,19 @@ public class MainActivity extends AppCompatActivity {
                 permissionManager.askPermissions(MainActivity.this, backgroundLocationPermission, 200);
             } else {
                 if (permissionManager.isLocationEnabled()) {
-                    Log.e("TAG","background location permission enabled");
+                    Log.e("TAG", "background location permission enabled");
                     startLocationWork();
                 } else {
                     permissionManager.createLocationRequest();
                     Toast.makeText(MainActivity.this, "Location service not enabled", Toast.LENGTH_SHORT).show();
                 }
+            }
+        });
+
+        //Get notification permission request
+        getRequestPermissionButton.setOnClickListener(view -> {
+            if (!permissionManager.checkPermissions(notificationPermission)) {
+                permissionManager.askPermissions(MainActivity.this, notificationPermission, 300);
             }
         });
 
@@ -79,10 +93,10 @@ public class MainActivity extends AppCompatActivity {
         if (permissionManager.handlePermissionResult(MainActivity.this, 100, permissions, grantResults)) {
 
             if (permissionManager.isLocationEnabled()) {
-                Log.e("TAG","onRequestPermissionResult isLocationEnabled true");
+                Log.e("TAG", "onRequestPermissionResult isLocationEnabled true");
                 startLocationWork();
             } else {
-                Log.e("TAG","onRequestPermissionResult isLocationEnabled false");
+                Log.e("TAG", "onRequestPermissionResult isLocationEnabled false");
                 //locationManager.createLocationResult();
                 Toast.makeText(MainActivity.this, "Location service is not enabled", Toast.LENGTH_SHORT)
                         .show();
@@ -94,16 +108,16 @@ public class MainActivity extends AppCompatActivity {
         Intent serviceIntent = new Intent(this, ForegroundService.class);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !foregroundServiceRunning()) {
             startForegroundService(serviceIntent);
-        }else {
-            Log.e("TAG","Main activity error");
+        } else {
+            Log.e("TAG", "Main activity error");
         }
     }
 
-        public  boolean foregroundServiceRunning(){
+    public boolean foregroundServiceRunning() {
         ActivityManager activityManager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
-        for(ActivityManager.RunningServiceInfo service:activityManager.getRunningServices(Integer.MAX_VALUE)){
-            if(ForegroundService.class.getName().equals(service.service.getClassName())){
-                return  true;
+        for (ActivityManager.RunningServiceInfo service : activityManager.getRunningServices(Integer.MAX_VALUE)) {
+            if (ForegroundService.class.getName().equals(service.service.getClassName())) {
+                return true;
             }
         }
 

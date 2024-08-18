@@ -57,7 +57,7 @@ public class ForegroundService extends Service {
         backgroundThread = new Thread(new Runnable() {
             @Override
             public void run() {
-                while (true) {
+                while (isRunning) {
                     requestLocationUpdates();
                     try {
                         Thread.sleep(5000);
@@ -86,9 +86,9 @@ public class ForegroundService extends Service {
     }
 
     private void requestLocationUpdates() {
-        LocationRequest locationRequest = new LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 0)
-                .setMinUpdateIntervalMillis(0)
-                .setMaxUpdateDelayMillis(0)
+        LocationRequest locationRequest = new LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 5000)
+                .setMinUpdateIntervalMillis(5000)
+                .setMaxUpdateDelayMillis(20000)
                 .build();
 
         if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
@@ -118,9 +118,11 @@ public class ForegroundService extends Service {
     }
 
     private Notification buildNotification() {
+        Log.e("TAG","notification builder");
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle("Location Service")
                 .setContentText("Tracking your location")
+                .setOngoing(true)
                 .setSmallIcon(R.drawable.ic_launcher_background)
                 .setPriority(NotificationCompat.PRIORITY_LOW);
 
