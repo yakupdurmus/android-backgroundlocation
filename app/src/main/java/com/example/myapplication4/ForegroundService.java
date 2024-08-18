@@ -58,7 +58,6 @@ public class ForegroundService extends Service {
             @Override
             public void run() {
                 while (true) {
-                    Log.e("runnig", isRunning + "-");
                     requestLocationUpdates();
                     try {
                         Thread.sleep(5000);
