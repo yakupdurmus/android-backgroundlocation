@@ -1,6 +1,6 @@
 Android Native background location demo
 
-![Screenshot_20240819_115506](https://github.com/user-attachments/assets/4cf2ecf8-64cc-41e5-8a65-e08dd927c38d)
+<img src="https://github.com/user-attachments/assets/4cf2ecf8-64cc-41e5-8a65-e08dd927c38d" alt="Backgroun Location" width="200"/>
 
 
 1- Give location permission 
