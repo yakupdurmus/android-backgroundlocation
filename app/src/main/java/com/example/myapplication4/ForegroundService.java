@@ -23,6 +23,9 @@ import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.Priority;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import okhttp3.MediaType;
 import okhttp3.MultipartBody;
 import okhttp3.OkHttpClient;
@@ -54,7 +57,6 @@ public class ForegroundService extends Service {
 
         Log.e("TAG", "onStartCommand worked");
 
-        requestLocationUpdates();
 
         startBackgroundThread();
 
@@ -65,14 +67,7 @@ public class ForegroundService extends Service {
         backgroundThread = new Thread(new Runnable() {
             @Override
             public void run() {
-                while (isRunning) {
-                    requestLocationUpdates();
-                    try {
-                        Thread.sleep(5000);
-                    } catch (InterruptedException e) {
-                        Log.e("Foreground Service", "Background thread interrupted", e);
-                    }
-                }
+                requestLocationUpdates();
             }
         });
         backgroundThread.start();
@@ -82,36 +77,40 @@ public class ForegroundService extends Service {
         locationCallback = new LocationCallback() {
             @Override
             public void onLocationResult(LocationResult locationResult) {
+                Location lastLocation = null;
                 if (locationResult == null) {
                     Log.e("TAG", "Location result null");
                     return;
                 }
                 for (Location location : locationResult.getLocations()) {
                     Log.e("Location Update", "Lat: " + location.getLatitude() + "," + location.getLongitude());
+                    lastLocation = location;
+                }
+
+                if (lastLocation != null) {
+                    sendLocationData(lastLocation);
                 }
             }
         };
     }
 
     private void requestLocationUpdates() {
-        LocationRequest locationRequest = new LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 5000)
-                .setMinUpdateIntervalMillis(5000)
-                .setMaxUpdateDelayMillis(20000)
-                .build();
-
         if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
                 && ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             Log.e("ForegroundService", "Location permission not granted");
             return;
         }
 
-        fusedLocationClient.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, null)
-                .addOnSuccessListener(location -> {
-                    if (location != null) {
-                        sendLocationData(location);
-                        Log.e("Location Update", "Lat: " + location.getLatitude() + "," + location.getLongitude());
-                    }
-                });
+        int fiveMinutes = 300000;
+        int twentySeconds = 5000;
+        LocationRequest locationRequest = new LocationRequest.Builder(Priority.PRIORITY_BALANCED_POWER_ACCURACY, twentySeconds)
+                .setMinUpdateIntervalMillis(twentySeconds)
+                .setMaxUpdateDelayMillis(fiveMinutes)
+                .build();
+
+
+        isRunning = true;
+        fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, getMainLooper());
     }
 
     private void createNotificationChannel() {
@@ -163,7 +162,7 @@ public class ForegroundService extends Service {
         super.onTaskRemoved(rootIntent);
     }
 
-    private void sendLocationData(Location location) {
+  private void sendLocationData(Location location) {
         new Thread(new Runnable() {
             @Override
             public void run() {
